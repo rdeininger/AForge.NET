@@ -117,6 +117,7 @@ namespace TwoCamerasTest
             VideoCaptureDevice videoSource1 = new VideoCaptureDevice( videoDevices[camera1Combo.SelectedIndex].MonikerString );
             videoSource1.DesiredFrameRate = 10;
 
+			videoSource1.VideoSourceError += VideoSource1OnVideoSourceError;
             videoSourcePlayer1.VideoSource = videoSource1;
             videoSourcePlayer1.Start( );
 
@@ -128,7 +129,8 @@ namespace TwoCamerasTest
                 VideoCaptureDevice videoSource2 = new VideoCaptureDevice( videoDevices[camera2Combo.SelectedIndex].MonikerString );
                 videoSource2.DesiredFrameRate = 10;
 
-                videoSourcePlayer2.VideoSource = videoSource2;
+	            videoSource1.VideoSourceError += VideoSource2OnVideoSourceError;
+				videoSourcePlayer2.VideoSource = videoSource2;
                 videoSourcePlayer2.Start( );
             }
 
@@ -138,8 +140,38 @@ namespace TwoCamerasTest
             timer.Start( );
         }
 
-        // Stop cameras
-        private void StopCameras( )
+	    private delegate void ShowErrorDelegate(string error);
+
+	    private void ShowError1(string error)
+	    {
+		    camera1FpsLabel.Text = error;
+		}
+
+	    private void VideoSource1OnVideoSourceError(object sender, VideoSourceErrorEventArgs eventargs)
+	    {
+		    timer.Stop();
+		    if (camera1FpsLabel.InvokeRequired)
+		    {
+			    camera1FpsLabel.Invoke(new ShowErrorDelegate(ShowError1), eventargs.Description);
+		    }
+	    }
+
+	    private void ShowError2(string error)
+	    {
+		    camera2FpsLabel.Text = error;
+	    }
+
+	    private void VideoSource2OnVideoSourceError(object sender, VideoSourceErrorEventArgs eventargs)
+	    {
+		    timer.Stop();
+		    if (camera2FpsLabel.InvokeRequired)
+		    {
+			    camera2FpsLabel.Invoke(new ShowErrorDelegate(ShowError2), eventargs.Description);
+		    }
+	    }
+
+		// Stop cameras
+		private void StopCameras( )
         {
             timer.Stop( );
 

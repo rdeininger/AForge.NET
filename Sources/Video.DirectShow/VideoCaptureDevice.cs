@@ -1197,22 +1197,9 @@ namespace AForge.Video.DirectShow
                             {
                                 mediaEvent.FreeEventParams( code, p1, p2 );
 
-                                if ( code == DsEvCode.DeviceLost )
-                                {
-                                    reasonToStop = ReasonToFinishPlaying.DeviceLost;
-                                    break;
-                                }
-								
-								if (code == DsEvCode.ErrorAbort)
+	                            if (!StillRunning(code, (uint) p1, ref reasonToStop))
 	                            {
-		                            string error = "Unknown";
-		                            if (DsEvError.Map.ContainsKey((uint) p1))
-		                            {
-			                            error = DsEvError.Map[(uint) p1];
-
-		                            }
-		                            throw new ApplicationException("DirectShow MediaEvent error abort: "+error.ToString());
-
+		                            break;
 	                            }
                             }
                         }
@@ -1328,7 +1315,38 @@ namespace AForge.Video.DirectShow
             }
         }
 
-        // Set resolution for the specified stream configuration
+	    private bool StillRunning(DsEvCode code, uint p1, ref ReasonToFinishPlaying reasonToStop)
+	    {
+		    string error = "Unknown";
+			switch (code)
+		    {
+				case DsEvCode.DeviceLost:
+					reasonToStop = ReasonToFinishPlaying.DeviceLost;
+					return false;
+				case DsEvCode.ErrorAbort:
+				case DsEvCode.ErrorAbortEx:
+					if (DsEvError.Map.ContainsKey((uint)p1))
+					{
+						error = DsEvError.Map[(uint)p1];
+					}
+					throw new ApplicationException("DirectShow media event error abort: " + error);
+				case DsEvCode.StErrStopped:
+					throw new ApplicationException("The stream has stopped because of an error.");
+					return false;
+				case DsEvCode.StreamBufferReadFailure:
+					throw new ApplicationException("Stream buffer read failure.");
+				case DsEvCode.NeedRestart:
+					throw new ApplicationException("A filter is requesting that the graph be restarted.");
+				//case DsEvCode.WindowDestroyed:
+				//	throw new ApplicationException("The video renderer was destroyed or removed from the graph.");
+				case DsEvCode.Starvation:
+					throw new ApplicationException("A filter is not receiving enough data.");
+
+			}
+			return true;
+	    }
+
+	    // Set resolution for the specified stream configuration
         private void SetResolution( IAMStreamConfig streamConfig, VideoCapabilities resolution )
         {
             if ( resolution == null )

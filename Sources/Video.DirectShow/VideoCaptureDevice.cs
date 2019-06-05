@@ -610,8 +610,9 @@ namespace AForge.Video.DirectShow
             if ( thread != null )
             {
                 // wait for thread stop
-                thread.Join( );
+                thread.Join( TimeSpan.FromSeconds(3) );
 
+				thread.Interrupt();
                 Free( );
             }
         }
